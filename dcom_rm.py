@@ -1,72 +1,84 @@
 import sys
 
-# Author: Khushal Mehta
-
 def is_digit(c):
-    """Check if a character is a digit (0-9)."""
     return '0' <= c <= '9'
 
 def is_valid_date(date):
-    """Validate the date format DD/MM/YYYY."""
-    if len(date) != 10:  # Ensure the length is 10 characters
+    """Validate the date format DD/MM/YYYY or D/M/YYYY."""
+    parts = date.split('/')
+    if len(parts) != 3:
         return False
-    if date[2] != '/' or date[5] != '/':  # Check for correct slashes
+    day, month, year = parts
+    if not (day.isdigit() and month.isdigit() and year.isdigit()):
         return False
-    day = int(date[0:2])  # Extract day
-    month = int(date[3:5])  # Extract month
-    year = int(date[6:10])  # Extract year
-    # Validate day, month, and year ranges
-    if day < 1 or day > 31 or month < 1 or month > 12 or year < 1000 or year > 9999:
+    day, month, year = int(day), int(month), int(year)
+    if month < 1 or month > 12 or year < 1000 or year > 9999:
         return False
-    return True
+    days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0):
+        days_in_month[1] = 29
+    return 1 <= day <= days_in_month[month - 1]
+
+def find_date(text):
+    """Find a date in the format D/M/YYYY or DD/MM/YYYY in the given text."""
+    i = 0
+    while i < len(text):
+        if is_digit(text[i]):
+            start = i
+            while i < len(text) and (is_digit(text[i]) or text[i] == '/'):
+                i += 1
+            potential_date = text[start:i].strip()
+            if is_valid_date(potential_date):
+                return potential_date
+        i += 1
+    return None
 
 def is_date_in_comment(comment):
     """Check if a comment contains a valid date."""
-    for i in range(len(comment) - 9):  # Loop through the comment
-        potential_date = comment[i:i+10]  # Extract a substring of length 10
-        if is_valid_date(potential_date):  # Check if it's a valid date
-            return True  # Return True if a valid date is found
-    return False  # Return False if no valid date is found
+    comment = comment.strip()  # Handle spaces before the date
+    return find_date(comment) is not None
 
 def remove_dated_comments(input_file, output_file):
     """Remove comments with valid dates from the input C++ file."""
     with open(input_file, 'r') as infile, open(output_file, 'w') as outfile:
-        inside_multiline_comment = False  # Track if inside a multi-line comment
-        current_multiline_comment = ""  # Store the current multi-line comment
+        in_multi_line_comment = False
+        multi_line_comment = ""
+
         for line in infile:
-            if not inside_multiline_comment:  # Not inside a multi-line comment
-                # Check for single-line comment
-                if '//' in line:
-                    comment_start = line.index('//')  # Find start of single-line comment
-                    code = line[:comment_start]  # Get code part
-                    comment = line[comment_start:]  # Get comment part
-                    if not is_date_in_comment(comment):  # Check if date is in comment
-                        outfile.write(line)  # Write the whole line if no date
-                    else:
-                        outfile.write(code + '\n')  # Write only code part if date is present
+            if not in_multi_line_comment:
                 # Check for start of multi-line comment
-                elif '/*' in line:
-                    inside_multiline_comment = True  # Set flag to True
-                    comment_start = line.index('/*')  # Find start of multi-line comment
-                    code = line[:comment_start]  # Get code part
-                    current_multiline_comment = line[comment_start:]  # Store multi-line comment
-                    outfile.write(code)  # Write the code part
+                if "/*" in line:
+                    parts = line.split("/*", 1)
+                    outfile.write(parts[0].rstrip())  # Write code before comment
+                    multi_line_comment = "/*" + parts[1]  # Capture start of comment
+                    in_multi_line_comment = True
+                elif "//" in line:
+                    # Handle single-line comment
+                    parts = line.split("//", 1)
+                    comment_content = parts[1].strip()
+                    if not is_date_in_comment(comment_content):
+                        outfile.write(parts[0] + "//" + comment_content + "\n")
+                    else:
+                        outfile.write(parts[0].rstrip() + "\n")  # Skip the comment
                 else:
-                    outfile.write(line)  # Write lines without comments as they are
+                    # No comment in line
+                    outfile.write(line)
             else:
-                # Inside multi-line comment
-                current_multiline_comment += line  # Accumulate lines for multi-line comment
-                if '*/' in line:  # Check for end of multi-line comment
-                    inside_multiline_comment = False  # Reset flag
-                    if not is_date_in_comment(current_multiline_comment):  # Check for date
-                        outfile.write(current_multiline_comment)  # Write multi-line comment if no date
-                    current_multiline_comment = ""  # Reset multi-line comment accumulator
+                # Accumulate multi-line comment until it's closed
+                multi_line_comment += line
+                if "*/" in line:
+                    in_multi_line_comment = False
+                    # Now check the entire multi-line comment for a date
+                    if not is_date_in_comment(multi_line_comment):
+                        outfile.write(multi_line_comment)
+                    else:
+                        outfile.write("\n")  # Skip the multi-line comment
+                    multi_line_comment = ""
 
 if __name__ == "__main__":
-    # Check command line arguments
     if len(sys.argv) != 3:
         print("Usage: python dcom_rm.py inputC.cpp inputC_rm.cpp")
-        sys.exit(1)  # Exit if incorrect arguments
-    input_file = sys.argv[1]  # Get input file name
-    output_file = sys.argv[2]  # Get output file name
-    remove_dated_comments(input_file, output_file)  # Call the function to remove dated comments
+        sys.exit(1)
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+    remove_dated_comments(input_file, output_file)

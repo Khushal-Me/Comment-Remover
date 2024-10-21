@@ -1,39 +1,64 @@
+// Test file for comment removal
 #include <iostream>
-using namespace std;
 
 int main() {
-    // 01/01/2023 This is a comment with a date and should be removed
-    cout << "Hello World!" << endl;
-    
-    // This is a regular single-line comment without a date
-    int x = 10;  // 02/02/2024 This inline comment should be removed
+    // Test 1: Regular single-line comment with date
+    int a = 5; // 12/05/2023 This comment should be removed
 
-    /* Multi-line comment with a valid date
-    05/05/2020 should be removed */
-    cout << "This line is after a multi-line comment with a date" << endl;
+    // Test 2: Single-line comment without date
+    int b = 10; // This comment should stay
 
-    /* This is a multi-line comment 
-    without any date and should remain */
+    // Test 3: Multiple single-line comments
+    int c = 15; // 01/01/2024 Remove this
+    int d = 20; // Keep this
+    // 02/02/2024 Remove this line entirely
 
-    /* This is a tricky one 31/12/2030
-    The date is in the middle but should still be removed */
+    // Test 4: Multi-line comment with date
+    /* This is a multi-line comment
+     * 03/03/2023 It should be removed
+     * entirely because it contains a date
+     */
 
-    /* Another valid comment
-    spanning multiple lines with no date
-    it should remain intact */
+    // Test 5: Multi-line comment without date
+    /* This multi-line comment
+     * should remain intact
+     * because it has no date
+     */
 
-    /* Here's a comment that ends abruptly
-    with a date 15/08/2021 and should be removed */
+    // Test 6: Nested comments
+    /* Outer comment
+     * // 04/04/2024 Inner comment with date
+     * should be removed
+     */
 
-    // Here's a comment with an invalid date 32/13/2023
-    cout << "Invalid date comment should stay!" << endl;
+    // Test 7: Date formats
+    // 1/1/2023 Single digit date
+    // 01/01/2023 Double digit date
 
-    /* An incomplete multiline comment 
-    that doesn't end properly
-    // This single-line comment should stay */
+    // Test 8: Invalid dates
+    // 32/13/2023 This should stay (invalid date)
+    // 12/30/9999 This should be removed (valid date)
 
-    /* Multi-line comment without a date
-    followed by another comment */
-    cout << "This is code after a multi-line comment without a date" << endl;
+    // Test 9: Alphabet test
+    int e = 123; // abc/def/ghij should not be removed
+
+    // Test 10: Date outside comment
+    std::cout << "Today is 05/05/2023" << std::endl; // This line should stay intact
+
+    // Test 11: Multiple dates in one comment
+    // 06/06/2023 This should be removed 07/07/2023 along with this
+
+    // Test 12: Date in the middle of a comment
+    // This comment has a date 08/08/2023 in the middle and should be removed
+
+    // Test 13: Spaced comments
+    int f = 30;    // 09/09/2023    This spaced comment should be removed
+
+    /* Test 14: Multi-line with mixed content
+     * This line is fine
+     * 10/10/2023 This line has a date
+     * This line is also fine
+     */
+
     return 0;
 }
